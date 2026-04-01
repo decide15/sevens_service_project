@@ -5,6 +5,7 @@ const http = require("node:http")
 const https = require("node:https")
 const crypto = require("node:crypto")
 const { URL } = require("node:url")
+const { loadAdminKey } = require("./passwordManager")
 
 const app = express()
 
@@ -17,7 +18,8 @@ const CONFIG_DIR = path.join(process.cwd(), "data")
 const CONFIG_FILE = path.join(CONFIG_DIR, "clash-subscription.json")
 
 const PORT = Number(process.env.PORT || 3000)
-const ADMIN_KEY = process.env.ADMIN_KEY || ""
+const adminKeyInfo = loadAdminKey()
+const ADMIN_KEY = adminKeyInfo.adminKey
 const CACHE_TTL_MS = Number(process.env.CACHE_TTL_MS || 30_000)
 const ADMIN_SESSION_TTL_MS = Number(process.env.ADMIN_SESSION_TTL_MS || 7 * 24 * 60 * 60 * 1000)
 const ADMIN_COOKIE_NAME = "sevens_admin_session"
@@ -183,7 +185,7 @@ function clearAdminSessionCookie(res) {
 
 function requireAdmin(req, res, next) {
   if (!ADMIN_KEY) {
-    res.status(500).send("服务端未配置 ADMIN_KEY 环境变量，无法进入管理页面。")
+    res.status(500).send("服务端未配置 ADMIN_KEY（环境变量或 data/admin-key.json），无法进入管理页面。")
     return
   }
 
@@ -353,7 +355,7 @@ app.get("/logout", (req, res) => {
 
 app.post("/login", (req, res) => {
   if (!ADMIN_KEY) {
-    res.status(500).type("text/plain; charset=utf-8").send("服务端未配置 ADMIN_KEY 环境变量，无法登录。")
+    res.status(500).type("text/plain; charset=utf-8").send("服务端未配置 ADMIN_KEY（环境变量或 data/admin-key.json），无法登录。")
     return
   }
 
@@ -672,5 +674,7 @@ app.listen(PORT, () => {
     configFile: CONFIG_FILE,
     cacheTtlMs: CACHE_TTL_MS,
     adminKeyConfigured: Boolean(ADMIN_KEY),
+    adminKeySource: adminKeyInfo.source,
+    adminKeyFile: adminKeyInfo.filePath,
   })
 })
