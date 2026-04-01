@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash test
 
 echo "🚀 Pull latest code..."
 git pull
